@@ -7,7 +7,40 @@
   <title>SIMTELE-WEB · Panel de control</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="bloqueado">
+
+  <!-- ACCESO -->
+  <div id="auth" class="auth">
+    <div class="auth-card">
+      <div class="auth-logo">🚠</div>
+      <h2>SIMTELE-WEB</h2>
+      <p class="ayuda">Inicia sesión para entrar al panel</p>
+
+      <div class="tabs">
+        <button type="button" id="tab-login" class="tab activo">Iniciar sesión</button>
+        <button type="button" id="tab-registro" class="tab">Crear cuenta</button>
+      </div>
+
+      <form id="form-auth" novalidate>
+        <label for="auth-user">Usuario</label>
+        <input type="text" id="auth-user" autocomplete="username" placeholder="Ej.: neth">
+
+        <label for="auth-pass">Contraseña</label>
+        <input type="password" id="auth-pass" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
+
+        <div id="campo-pass2" hidden>
+          <label for="auth-pass2">Repetir contraseña</label>
+          <input type="password" id="auth-pass2" autocomplete="new-password">
+        </div>
+
+        <button type="submit" id="auth-submit">Entrar</button>
+      </form>
+      <p id="msg-auth" class="mensaje" role="alert"></p>
+      <p class="ayuda">Cuenta de prueba: <b>demo</b> / <b>demo123</b></p>
+    </div>
+  </div>
+
+  <!-- BARRA SUPERIOR -->
   <header class="top">
     <div class="top-in">
       <a class="brand" href="#resumen">
@@ -22,8 +55,10 @@
         <a href="#sensores">Sensores</a>
       </nav>
       <div class="acciones">
+        <span id="usuario" class="usuario" hidden></span>
         <button id="tema" class="ghost" type="button">🌙 Modo oscuro</button>
         <button id="reset" class="ghost" type="button">♻️ Reiniciar</button>
+        <button id="logout" class="ghost" type="button">🚪 Cerrar sesión</button>
       </div>
     </div>
     <div class="franja" aria-hidden="true"></div>
@@ -90,6 +125,7 @@
     <section id="mantenimiento" class="card amarilla">
       <h2>🔧 Mantenimiento <span class="tag">Línea Amarilla</span></h2>
       <form id="form-mant" novalidate>
+        <p id="modo-mant" class="modo" hidden></p>
         <div class="grid3">
           <div><label for="componente">Componente</label>
             <input type="text" id="componente" placeholder="Ej.: Motor, polea, cabina"></div>
@@ -102,7 +138,8 @@
               <option value="urgente">Urgente</option>
             </select></div>
         </div>
-        <button type="submit">Agregar registro</button>
+        <button type="submit" id="btn-mant">Agregar registro</button>
+        <button type="button" id="cancel-mant" class="secundario" hidden>Cancelar edición</button>
       </form>
       <p id="msg-mant" class="mensaje" role="status"></p>
       <div class="tabla-wrap">
@@ -134,39 +171,4 @@
     <!-- MÓDULO 4 -->
     <section id="sensores" class="card verde">
       <h2>📡 Sensores <span class="tag">Línea Verde</span></h2>
-      <form id="form-sensor" novalidate>
-        <div class="grid3">
-          <div><label for="codigo">Código de sensor</label>
-            <input type="text" id="codigo" placeholder="SEN-001">
-            <small class="ayuda">Formato: SEN- y 3 dígitos.</small></div>
-          <div><label for="tipo">Tipo</label>
-            <select id="tipo">
-              <option value="Temperatura">Temperatura</option>
-              <option value="Vibración">Vibración</option>
-              <option value="Viento">Viento</option>
-            </select></div>
-          <div><label for="lectura">Lectura</label>
-            <input type="text" id="lectura" inputmode="decimal" placeholder="Ej.: 25.5"></div>
-        </div>
-        <button type="submit">Registrar sensor</button>
-      </form>
-      <p id="msg-sensor" class="mensaje" role="status"></p>
-      <div class="tabla-wrap">
-        <table>
-          <thead><tr><th>Código</th><th>Tipo</th><th>Lectura</th></tr></thead>
-          <tbody id="tbody-sensor"></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <div class="franja" aria-hidden="true"></div>
-    <p>Programación Web I · SIMTELE-WEB · Proyecto educativo con datos y umbrales ficticios.<br>
-    Inspirado en la identidad de las líneas de Mi Teleférico; no es el sitio oficial.</p>
-  </footer>
-
-  <div id="toasts" aria-live="polite"></div>
-  <script src="script.js"></script>
-</body>
-</html>
+      <form id="form-sensor"
