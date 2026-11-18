@@ -1,20 +1,21 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Panel educativo de prevención y monitoreo de transporte por cable (simulación)">
+  <meta name="description" content="Panel educativo de prevención y monitoreo de transporte por cable">
   <title>SIMTELE-WEB · Panel de control</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="bloqueado">
 
-  <!-- ACCESO -->
+  <!-- INICIO DE SESIÓN Y REGISTRO -->
   <div id="auth" class="auth">
     <div class="auth-card">
       <div class="auth-logo">🚠</div>
       <h2>SIMTELE-WEB</h2>
-      <p class="ayuda">Inicia sesión para entrar al panel</p>
+      <p class="ayuda">Panel de prevención y monitoreo</p>
 
       <div class="tabs">
         <button type="button" id="tab-login" class="tab activo">Iniciar sesión</button>
@@ -23,18 +24,22 @@
 
       <form id="form-auth" novalidate>
         <label for="auth-user">Usuario</label>
-        <input type="text" id="auth-user" autocomplete="username" placeholder="Ej.: neth">
+        <input id="auth-user" type="text" autocomplete="username"
+               placeholder="Ej.: usuario123" required>
 
         <label for="auth-pass">Contraseña</label>
-        <input type="password" id="auth-pass" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
+        <input id="auth-pass" type="password" autocomplete="current-password"
+               placeholder="Contraseña" required>
 
         <div id="campo-pass2" hidden>
-          <label for="auth-pass2">Repetir contraseña</label>
-          <input type="password" id="auth-pass2" autocomplete="new-password">
+          <label for="auth-pass2">Confirmar contraseña</label>
+          <input id="auth-pass2" type="password"
+                 autocomplete="new-password">
         </div>
 
         <button type="submit" id="auth-submit">Entrar</button>
       </form>
+
       <p id="msg-auth" class="mensaje" role="alert"></p>
       <p class="ayuda">Cuenta de prueba: <b>demo</b> / <b>demo123</b></p>
     </div>
@@ -45,8 +50,12 @@
     <div class="top-in">
       <a class="brand" href="#resumen">
         <span class="logo">🚠</span>
-        <div><strong>SIMTELE-WEB</strong><small>Simulador educativo</small></div>
+        <div>
+          <strong>SIMTELE-WEB</strong>
+          <small>Simulador educativo</small>
+        </div>
       </a>
+
       <nav id="menu" aria-label="Módulos">
         <a href="#resumen" class="activo">Resumen</a>
         <a href="#detencion">Detención</a>
@@ -54,23 +63,58 @@
         <a href="#viento">Viento</a>
         <a href="#sensores">Sensores</a>
       </nav>
+
       <div class="acciones">
         <span id="usuario" class="usuario" hidden></span>
+        <button id="editar-cuenta" class="ghost" type="button">👤 Mi cuenta</button>
         <button id="tema" class="ghost" type="button">🌙 Modo oscuro</button>
         <button id="reset" class="ghost" type="button">♻️ Reiniciar</button>
-        <button id="logout" class="ghost" type="button">🚪 Cerrar sesión</button>
+        <button id="logout" class="ghost" type="button">🚪 Salir</button>
       </div>
     </div>
-    <div class="franja" aria-hidden="true"></div>
+    <div class="franja"></div>
   </header>
 
+  <!-- EDICIÓN DE CUENTA -->
+  <div id="modal-cuenta" class="modal" hidden>
+    <div class="modal-card">
+      <button type="button" id="cerrar-modal" class="cerrar-modal">✕</button>
+      <h2>👤 Editar mi cuenta</h2>
+      <p class="ayuda">Modifica tus datos de acceso.</p>
+
+      <form id="form-cuenta" novalidate>
+        <label for="nuevo-usuario">Nuevo nombre de usuario</label>
+        <input id="nuevo-usuario" type="text" required>
+
+        <label for="clave-actual">Contraseña actual</label>
+        <input id="clave-actual" type="password" required>
+
+        <label for="nueva-clave">Nueva contraseña</label>
+        <input id="nueva-clave" type="password"
+               placeholder="Dejar vacío si no deseas cambiarla">
+
+        <label for="confirmar-clave">Confirmar nueva contraseña</label>
+        <input id="confirmar-clave" type="password"
+               placeholder="Repite la nueva contraseña">
+
+        <button type="submit">Guardar cambios</button>
+        <button type="button" id="cancelar-cuenta" class="secundario">
+          Cancelar
+        </button>
+      </form>
+      <p id="msg-cuenta" class="mensaje" role="alert"></p>
+    </div>
+  </div>
+
   <main>
-    <!-- PORTADA + RESUMEN -->
+    <!-- RESUMEN -->
     <section id="resumen" class="hero">
       <div class="hero-bg" aria-hidden="true">
         <svg class="montes" viewBox="0 0 1200 200" preserveAspectRatio="none">
-          <path d="M0 200V140L120 90 200 130 330 60 450 140 560 100 700 150 820 80 960 140 1080 100 1200 150V200Z" fill="rgba(255,255,255,.12)"/>
-          <path d="M0 200V170L150 130 300 170 480 120 650 175 850 125 1020 170 1200 135V200Z" fill="rgba(255,255,255,.22)"/>
+          <path d="M0 200V140L120 90 200 130 330 60 450 140 560 100 700 150 820 80 960 140 1080 100 1200 150V200Z"
+                fill="rgba(255,255,255,.12)"/>
+          <path d="M0 200V170L150 130 300 170 480 120 650 175 850 125 1020 170 1200 135V200Z"
+                fill="rgba(255,255,255,.22)"/>
         </svg>
         <div class="cable"><span class="cabin">🚠</span></div>
       </div>
@@ -78,9 +122,12 @@
       <div class="wrap">
         <span class="chip">Modo simulación</span>
         <h1>Panel de prevención y monitoreo del teleférico</h1>
-        <p class="sub">Practica detención de emergencia, mantenimiento, viento y sensores con datos y umbrales ficticios.</p>
+        <p class="sub">
+          Practica detención de emergencia, mantenimiento, viento y sensores
+          con datos y umbrales ficticios.
+        </p>
 
-        <div class="lineas" aria-label="Líneas de referencia">
+        <div class="lineas">
           <span class="lc" style="--c:#E30613">Roja</span>
           <span class="lc" style="--c:#F5B700">Amarilla</span>
           <span class="lc" style="--c:#00A651">Verde</span>
@@ -94,73 +141,120 @@
         </div>
 
         <div class="kpis">
-          <article class="kpi amarilla"><span>🔧</span><div><small>Registros de mantenimiento</small><strong id="k-mant">0</strong><em id="k-urg">0 urgentes</em></div></article>
-          <article class="kpi verde"><span>📡</span><div><small>Sensores válidos</small><strong id="k-sens">0</strong><em>códigos SEN-###</em></div></article>
-          <article class="kpi roja"><span>🛑</span><div><small>Última distancia de reacción</small><strong id="k-dist">—</strong><em>metros</em></div></article>
-          <article class="kpi celeste"><span>🌬️</span><div><small>Último promedio de viento</small><strong id="k-viento">—</strong><em>km/h</em></div></article>
+          <article class="kpi amarilla">
+            <span>🔧</span>
+            <div>
+              <small>Registros de mantenimiento</small>
+              <strong id="k-mant">0</strong>
+              <em id="k-urg">0 urgentes</em>
+            </div>
+          </article>
+          <article class="kpi verde">
+            <span>📡</span>
+            <div>
+              <small>Sensores válidos</small>
+              <strong id="k-sens">0</strong>
+              <em>códigos SEN-###</em>
+            </div>
+          </article>
+          <article class="kpi roja">
+            <span>🛑</span>
+            <div>
+              <small>Última distancia de reacción</small>
+              <strong id="k-dist">—</strong>
+              <em>metros</em>
+            </div>
+          </article>
+          <article class="kpi celeste">
+            <span>🌬️</span>
+            <div>
+              <small>Último promedio de viento</small>
+              <strong id="k-viento">—</strong>
+              <em>km/h</em>
+            </div>
+          </article>
         </div>
       </div>
     </section>
 
-    <!-- MÓDULO 1 -->
+    <!-- DETENCIÓN -->
     <section id="detencion" class="card roja">
       <h2>🛑 Detención de emergencia <span class="tag">Línea Roja</span></h2>
-      <p class="ayuda">Fórmula: d = (v / 3.6) × t. Umbral ficticio: <b>50 m</b>.</p>
+      <p class="ayuda">
+        Fórmula: d = (v / 3.6) × t. Umbral ficticio: <b>50 m</b>.
+      </p>
       <form id="form-detencion" novalidate>
         <div class="grid2">
-          <div><label for="velocidad">Velocidad (km/h)</label>
-            <input type="text" id="velocidad" inputmode="decimal" placeholder="Ej.: 72">
-            <small class="ayuda">Entre 1 y 100.</small></div>
-          <div><label for="tiempo">Tiempo de reacción (s)</label>
-            <input type="text" id="tiempo" inputmode="decimal" placeholder="Ej.: 3">
-            <small class="ayuda">Entre 0.1 y 10.</small></div>
+          <div>
+            <label for="velocidad">Velocidad (km/h)</label>
+            <input id="velocidad" inputmode="decimal" placeholder="Ej.: 72">
+            <small class="ayuda">Entre 1 y 100.</small>
+          </div>
+          <div>
+            <label for="tiempo">Tiempo de reacción (s)</label>
+            <input id="tiempo" inputmode="decimal" placeholder="Ej.: 3">
+            <small class="ayuda">Entre 0.1 y 10.</small>
+          </div>
         </div>
         <button type="submit">Calcular distancia</button>
       </form>
-      <div class="medidor" aria-hidden="true"><div id="medidor-barra"></div><i></i></div>
+      <div class="medidor"><div id="medidor-barra"></div><i></i></div>
       <p id="msg-detencion" class="mensaje" role="status"></p>
     </section>
 
-    <!-- MÓDULO 2 -->
+    <!-- MANTENIMIENTO -->
     <section id="mantenimiento" class="card amarilla">
       <h2>🔧 Mantenimiento <span class="tag">Línea Amarilla</span></h2>
       <form id="form-mant" novalidate>
         <p id="modo-mant" class="modo" hidden></p>
         <div class="grid3">
-          <div><label for="componente">Componente</label>
-            <input type="text" id="componente" placeholder="Ej.: Motor, polea, cabina"></div>
-          <div><label for="horas">Horas de uso</label>
-            <input type="text" id="horas" inputmode="decimal" placeholder="Ej.: 1200"></div>
-          <div><label for="estado">Estado</label>
+          <div>
+            <label for="componente">Componente</label>
+            <input id="componente" placeholder="Ej.: Motor, polea, cabina">
+          </div>
+          <div>
+            <label for="horas">Horas de uso</label>
+            <input id="horas" inputmode="decimal" placeholder="Ej.: 1200">
+          </div>
+          <div>
+            <label for="estado">Estado</label>
             <select id="estado">
               <option value="normal">Normal</option>
               <option value="revision">Revisión</option>
               <option value="urgente">Urgente</option>
-            </select></div>
+            </select>
+          </div>
         </div>
         <button type="submit" id="btn-mant">Agregar registro</button>
-        <button type="button" id="cancel-mant" class="secundario" hidden>Cancelar edición</button>
+        <button type="button" id="cancel-mant" class="secundario" hidden>
+          Cancelar edición
+        </button>
       </form>
       <p id="msg-mant" class="mensaje" role="status"></p>
       <div class="tabla-wrap">
         <table>
-          <thead><tr><th>Componente</th><th>Horas</th><th>Estado</th><th>Acción</th></tr></thead>
+          <thead>
+            <tr><th>Componente</th><th>Horas</th><th>Estado</th><th>Acción</th></tr>
+          </thead>
           <tbody id="tbody-mant"></tbody>
         </table>
       </div>
     </section>
 
-    <!-- MÓDULO 3 -->
+    <!-- VIENTO -->
     <section id="viento" class="card celeste">
       <h2>🌬️ Viento y oscilación <span class="tag">Línea Celeste</span></h2>
-      <p class="ayuda">5 mediciones simuladas (0 a 200 km/h). Clasificación didáctica: &lt;20 calma · 20–39 moderado · ≥40 fuerte.</p>
+      <p class="ayuda">
+        5 mediciones simuladas (0 a 200 km/h).
+        Clasificación didáctica: menos de 20 calma, 20–39 moderado, 40 o más fuerte.
+      </p>
       <form id="form-viento" novalidate>
         <div class="fila-viento">
-          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 1" placeholder="M1">
-          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 2" placeholder="M2">
-          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 3" placeholder="M3">
-          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 4" placeholder="M4">
-          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 5" placeholder="M5">
+          <input class="viento" inputmode="decimal" aria-label="Medición 1" placeholder="M1">
+          <input class="viento" inputmode="decimal" aria-label="Medición 2" placeholder="M2">
+          <input class="viento" inputmode="decimal" aria-label="Medición 3" placeholder="M3">
+          <input class="viento" inputmode="decimal" aria-label="Medición 4" placeholder="M4">
+          <input class="viento" inputmode="decimal" aria-label="Medición 5" placeholder="M5">
         </div>
         <button type="submit">Analizar mediciones</button>
       </form>
@@ -168,40 +262,56 @@
       <p id="msg-viento" class="mensaje" role="status"></p>
     </section>
 
-    <!-- MÓDULO 4 -->
+    <!-- SENSORES -->
     <section id="sensores" class="card verde">
       <h2>📡 Sensores <span class="tag">Línea Verde</span></h2>
       <form id="form-sensor" novalidate>
         <p id="modo-sensor" class="modo" hidden></p>
         <div class="grid3">
-          <div><label for="codigo">Código</label>
-            <input type="text" id="codigo" placeholder="Ej.: SEN-001"></div>
-          <div><label for="tipo">Tipo</label>
+          <div>
+            <label for="codigo">Código de sensor</label>
+            <input id="codigo" placeholder="SEN-001">
+            <small class="ayuda">Formato: SEN- y 3 dígitos.</small>
+          </div>
+          <div>
+            <label for="tipo">Tipo</label>
             <select id="tipo">
               <option value="Temperatura">Temperatura</option>
               <option value="Vibración">Vibración</option>
               <option value="Viento">Viento</option>
-              <option value="Tensión de cable">Tensión de cable</option>
-            </select></div>
-          <div><label for="lectura">Lectura</label>
-            <input type="text" id="lectura" inputmode="decimal" placeholder="Ej.: 23.5"></div>
+            </select>
+          </div>
+          <div>
+            <label for="lectura">Lectura</label>
+            <input id="lectura" inputmode="decimal" placeholder="Ej.: 25.5">
+          </div>
         </div>
         <button type="submit" id="btn-sensor">Registrar sensor</button>
-        <button type="button" id="cancel-sensor" class="secundario" hidden>Cancelar edición</button>
+        <button type="button" id="cancel-sensor" class="secundario" hidden>
+          Cancelar edición
+        </button>
       </form>
       <p id="msg-sensor" class="mensaje" role="status"></p>
       <div class="tabla-wrap">
         <table>
-          <thead><tr><th>Código</th><th>Tipo</th><th>Lectura</th><th>Acción</th></tr></thead>
+          <thead>
+            <tr><th>Código</th><th>Tipo</th><th>Lectura</th><th>Acción</th></tr>
+          </thead>
           <tbody id="tbody-sensor"></tbody>
         </table>
       </div>
     </section>
   </main>
 
-  <footer><p>SIMTELE-WEB · Simulador educativo con datos ficticios</p></footer>
+  <footer>
+    <div class="franja"></div>
+    <p>
+      Programación Web I · SIMTELE-WEB · Proyecto educativo con datos y umbrales ficticios.
+      <br>Inspirado en la identidad de las líneas de Mi Teleférico; no es el sitio oficial.
+    </p>
+  </footer>
+
   <div id="toasts" aria-live="polite"></div>
-  <script src="app.js"></script>
+  <script src="script.js"></script>
 </body>
-</html>span></h2>
-      <form id="form-sensor"
+</html>
