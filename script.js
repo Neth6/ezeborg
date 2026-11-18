@@ -1,10 +1,16 @@
 const UMBRAL_DISTANCIA = 50; // metros (ficticio)
 const REGEX_SENSOR = /^SEN-\d{3}$/;
+const REGEX_USUARIO = /^[A-Za-z0-9_]{3,20}$/;
 const ESTADOS = { normal: "Normal", revision: "Revisión", urgente: "Urgente" };
 
-let mantenimiento = []; // [{id, componente, horas, estado}]
-let sensores = [];      // [{codigo, tipo, lectura}]
+let usuarioActual = null; // clave (minúsculas) del usuario con sesión
+let modoRegistro = false;
+let mantenimiento = [];   // [{id, componente, horas, estado}]
+let sensores = [];        // [{id, codigo, tipo, lectura}]
 let siguienteId = 1;
+let siguienteSensor = 1;
+let editandoMant = null;
+let editandoSensor = null;
 
 // ---------- Utilidades ----------
 const $ = (id) => document.getElementById(id);
@@ -22,28 +28,21 @@ function mostrarMensaje(id, texto, tipo) {
   const el = $(id);
   el.textContent = texto;
   el.className = "mensaje " + tipo;
-  if (tipo === "error") toast(texto, "error");
+  if (tipo === "error" && id !== "msg-auth") toast(texto, "error");
 }
 
-function guardar() {
-  try {
-    localStorage.setItem("simtele_mant", JSON.stringify(mantenimiento));
-    localStorage.setItem("simtele_sens", JSON.stringify(sensores));
-  } catch (e) { /* la página sigue funcionando sin localStorage */ }
+function limpiarMensaje(id) {
+  $(id).textContent = "";
+  $(id).className = "mensaje";
 }
 
-function cargar() {
-  try {
-    mantenimiento = JSON.parse(localStorage.getItem("simtele_mant")) || [];
-    sensores = JSON.parse(localStorage.getItem("simtele_sens")) || [];
-  } catch (e) { mantenimiento = []; sensores = []; }
-  siguienteId = mantenimiento.reduce((m, r) => Math.max(m, r.id), 0) + 1;
-}
-
-function actualizarKpis() {
-  $("k-mant").textContent = mantenimiento.length;
-  $("k-urg").textContent = mantenimiento.filter((r) => r.estado === "urgente").length + " urgentes";
-  $("k-sens").textContent = sensores.length;
+function botonAccion(texto, clase, fn) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = texto;
+  b.className = clase;
+  b.addEventListener("click", fn);
+  return b;
 }
 
 function filaVacia(tbody, cols, texto) {
@@ -54,6 +53,155 @@ function filaVacia(tbody, cols, texto) {
   td.textContent = texto;
   tr.appendChild(td);
   tbody.appendChild(tr);
+}
+
+// ---------- Almacenamiento (por usuario) ----------
+function claveDatos(tipo) { return "simtele_" + tipo + "_" + usuarioActual; }
+
+function guardar() {
+  if (!usuarioActual) return;
+  try {
+    localStorage.setItem(claveDatos("mant"), JSON.stringify(mantenimiento));
+    localStorage.setItem(claveDatos("sens"), JSON.stringify(sensores));
+  } catch (e) { /* la página sigue funcionando sin localStorage */ }
+}
+
+function cargar() {
+  try {
+    mantenimiento = JSON.parse(localStorage.getItem(claveDatos("mant"))) || [];
+    sensores = JSON.parse(localStorage.getItem(claveDatos("sens"))) || [];
+  } catch (e) { mantenimiento = []; sensores = []; }
+
+  let n = mantenimiento.reduce((m, r) => Math.max(m, r.id || 0), 0);
+  mantenimiento.forEach((r) => { if (!r.id) r.id = ++n; });
+  siguienteId = n + 1;
+
+  let s = sensores.reduce((m, r) => Math.max(m, r.id || 0), 0);
+  sensores.forEach((r) => { if (!r.id) r.id = ++s; });
+  siguienteSensor = s + 1;
+}
+
+function actualizarKpis() {
+  $("k-mant").textContent = mantenimiento.length;
+  $("k-urg").textContent = mantenimiento.filter((r) => r.estado === "urgente").length + " urgentes";
+  $("k-sens").textContent = sensores.length;
+}
+
+// ---------- Autenticación (simulada en el navegador) ----------
+function leerUsuarios() {
+  try { return JSON.parse(localStorage.getItem("simtele_usuarios")) || {}; }
+  catch (e) { return {}; }
+}
+
+function guardarUsuarios(u) {
+  try { localStorage.setItem("simtele_usuarios", JSON.stringify(u)); } catch (e) {}
+}
+
+function nuevaSal() {
+  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+// SHA-256 con sal. Si el navegador no lo permite, usa un respaldo simple (solo didáctico).
+async function hashClave(clave, sal) {
+  const texto = sal + ":" + clave;
+  if (window.crypto && crypto.subtle) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  let h = 5381;
+  for (let i = 0; i < texto.length; i++) h = ((h << 5) + h + texto.charCodeAt(i)) | 0;
+  return "d" + (h >>> 0).toString(16);
+}
+
+async function sembrarDemo() {
+  const usuarios = leerUsuarios();
+  if (usuarios.demo) return;
+  const sal = nuevaSal();
+  usuarios.demo = { nombre: "demo", sal: sal, hash: await hashClave("demo123", sal) };
+  guardarUsuarios(usuarios);
+}
+
+function cambiarModo(registro) {
+  modoRegistro = registro;
+  $("tab-login").classList.toggle("activo", !registro);
+  $("tab-registro").classList.toggle("activo", registro);
+  $("campo-pass2").hidden = !registro;
+  $("auth-submit").textContent = registro ? "Crear cuenta" : "Entrar";
+  $("auth-pass").autocomplete = registro ? "new-password" : "current-password";
+  limpiarMensaje("msg-auth");
+}
+
+async function enviarAuth(e) {
+  e.preventDefault();
+  const usuario = $("auth-user").value.trim();
+  const clave = $("auth-pass").value;
+  const usuarios = leerUsuarios();
+  const k = usuario.toLowerCase();
+
+  if (usuario === "" || clave === "")
+    return mostrarMensaje("msg-auth", "Completa usuario y contraseña.", "error");
+
+  if (modoRegistro) {
+    if (!REGEX_USUARIO.test(usuario))
+      return mostrarMensaje("msg-auth", "Usuario de 3 a 20 caracteres: letras, números o _.", "error");
+    if (clave.length < 6)
+      return mostrarMensaje("msg-auth", "La contraseña debe tener al menos 6 caracteres.", "error");
+    if (clave !== $("auth-pass2").value)
+      return mostrarMensaje("msg-auth", "Las contraseñas no coinciden.", "error");
+    if (usuarios[k])
+      return mostrarMensaje("msg-auth", "Ese usuario ya existe.", "error");
+
+    const sal = nuevaSal();
+    usuarios[k] = { nombre: usuario, sal: sal, hash: await hashClave(clave, sal) };
+    guardarUsuarios(usuarios);
+    entrar(k, false);
+    toast("Cuenta creada", "ok");
+  } else {
+    const u = usuarios[k];
+    if (!u || u.hash !== await hashClave(clave, u.sal))
+      return mostrarMensaje("msg-auth", "Usuario o contraseña incorrectos.", "error");
+    entrar(k, false);
+  }
+}
+
+function entrar(k, silencioso) {
+  usuarioActual = k;
+  try { sessionStorage.setItem("simtele_sesion", k); } catch (e) {}
+  const u = leerUsuarios()[k];
+  $("usuario").textContent = "👤 " + (u ? u.nombre : k);
+  $("usuario").hidden = false;
+
+  cargar();
+  renderMantenimiento();
+  renderSensores();
+  document.body.classList.remove("bloqueado");
+  $("form-auth").reset();
+  cambiarModo(false);
+  window.scrollTo(0, 0);
+  if (!silencioso) toast("Bienvenido, " + (u ? u.nombre : k), "ok");
+}
+
+function limpiarPanel() {
+  ["form-detencion", "form-viento"].forEach((id) => $(id).reset());
+  ["msg-detencion", "msg-mant", "msg-viento", "msg-sensor"].forEach(limpiarMensaje);
+  $("medidor-barra").style.width = "0";
+  $("barras").innerHTML = "";
+  $("k-dist").textContent = "—";
+  $("k-viento").textContent = "—";
+}
+
+function cerrarSesion() {
+  try { sessionStorage.removeItem("simtele_sesion"); } catch (e) {}
+  usuarioActual = null;
+  mantenimiento = [];
+  sensores = [];
+  salirEdicionMant();
+  salirEdicionSensor();
+  limpiarPanel();
+  $("usuario").hidden = true;
+  document.body.classList.add("bloqueado");
+  window.scrollTo(0, 0);
+  toast("Sesión cerrada", "alerta");
 }
 
 // ---------- Módulo 1: Detención ----------
@@ -93,11 +241,14 @@ function renderMantenimiento() {
 
   mantenimiento.forEach(function (r) {
     const tr = document.createElement("tr");
+    if (r.id === editandoMant) tr.className = "editando";
+
     [r.componente, r.horas].forEach(function (dato) {
       const td = document.createElement("td");
       td.textContent = dato;
       tr.appendChild(td);
     });
+
     const tdEst = document.createElement("td");
     const badge = document.createElement("span");
     badge.className = "badge b-" + r.estado;
@@ -106,18 +257,18 @@ function renderMantenimiento() {
     tr.appendChild(tdEst);
 
     const tdAcc = document.createElement("td");
-    const btn = document.createElement("button");
-    btn.textContent = "Eliminar";
-    btn.className = "btn-eliminar";
-    btn.addEventListener("click", () => eliminarMantenimiento(r.id));
-    tdAcc.appendChild(btn);
+    const acc = document.createElement("div");
+    acc.className = "acc";
+    acc.appendChild(botonAccion("Editar", "btn-editar", () => editarMantenimiento(r.id)));
+    acc.appendChild(botonAccion("Eliminar", "btn-eliminar", () => eliminarMantenimiento(r.id)));
+    tdAcc.appendChild(acc);
     tr.appendChild(tdAcc);
     tbody.appendChild(tr);
   });
   actualizarKpis();
 }
 
-function agregarMantenimiento(e) {
+function guardarMantenimiento(e) {
   e.preventDefault();
   const componente = $("componente").value.trim();
   const horasTxt = $("horas").value;
@@ -131,17 +282,53 @@ function agregarMantenimiento(e) {
   if (horas < 0 || horas > 100000)
     return mostrarMensaje("msg-mant", "Las horas deben estar entre 0 y 100000.", "error");
 
-  mantenimiento.push({ id: siguienteId++, componente, horas, estado });
-  e.target.reset();
+  if (editandoMant !== null) {
+    const r = mantenimiento.find((x) => x.id === editandoMant);
+    if (r) { r.componente = componente; r.horas = horas; r.estado = estado; }
+    salirEdicionMant();
+    guardar();
+    mostrarMensaje("msg-mant", "Registro actualizado.", "ok");
+    toast("Cambios guardados", "ok");
+  } else {
+    mantenimiento.push({ id: siguienteId++, componente, horas, estado });
+    $("form-mant").reset();
+    renderMantenimiento();
+    guardar();
+    mostrarMensaje("msg-mant", "Registro agregado.", "ok");
+    toast("Componente agregado", "ok");
+  }
+}
+
+function editarMantenimiento(id) {
+  const r = mantenimiento.find((x) => x.id === id);
+  if (!r) return;
+  editandoMant = id;
+  $("componente").value = r.componente;
+  $("horas").value = r.horas;
+  $("estado").value = r.estado;
+  $("btn-mant").textContent = "Guardar cambios";
+  $("cancel-mant").hidden = false;
+  $("modo-mant").textContent = "✏️ Editando: " + r.componente;
+  $("modo-mant").hidden = false;
+  limpiarMensaje("msg-mant");
   renderMantenimiento();
-  guardar();
-  mostrarMensaje("msg-mant", "Registro agregado.", "ok");
-  toast("Componente agregado", "ok");
+  $("form-mant").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("componente").focus();
+}
+
+function salirEdicionMant() {
+  editandoMant = null;
+  $("form-mant").reset();
+  $("btn-mant").textContent = "Agregar registro";
+  $("cancel-mant").hidden = true;
+  $("modo-mant").hidden = true;
+  renderMantenimiento();
 }
 
 function eliminarMantenimiento(id) {
+  if (!confirm("¿Eliminar este registro?")) return;
   mantenimiento = mantenimiento.filter((r) => r.id !== id);
-  renderMantenimiento();
+  if (editandoMant === id) salirEdicionMant(); else renderMantenimiento();
   guardar();
   mostrarMensaje("msg-mant", "Registro eliminado.", "ok");
 }
@@ -200,20 +387,31 @@ function analizarViento(e) {
 function renderSensores() {
   const tbody = $("tbody-sensor");
   tbody.innerHTML = "";
-  if (sensores.length === 0) filaVacia(tbody, 3, "Aún no hay sensores válidos.");
+  if (sensores.length === 0) filaVacia(tbody, 4, "Aún no hay sensores válidos.");
+
   sensores.forEach(function (s) {
     const tr = document.createElement("tr");
+    if (s.id === editandoSensor) tr.className = "editando";
+
     [s.codigo, s.tipo, s.lectura].forEach(function (dato) {
       const td = document.createElement("td");
       td.textContent = dato;
       tr.appendChild(td);
     });
+
+    const tdAcc = document.createElement("td");
+    const acc = document.createElement("div");
+    acc.className = "acc";
+    acc.appendChild(botonAccion("Editar", "btn-editar", () => editarSensor(s.id)));
+    acc.appendChild(botonAccion("Eliminar", "btn-eliminar", () => eliminarSensor(s.id)));
+    tdAcc.appendChild(acc);
+    tr.appendChild(tdAcc);
     tbody.appendChild(tr);
   });
   actualizarKpis();
 }
 
-function registrarSensor(e) {
+function guardarSensor(e) {
   e.preventDefault();
   const codigo = $("codigo").value.trim();
   const tipo = $("tipo").value;
@@ -223,17 +421,63 @@ function registrarSensor(e) {
     return mostrarMensaje("msg-sensor", "El código no puede estar vacío.", "error");
   if (!REGEX_SENSOR.test(codigo))
     return mostrarMensaje("msg-sensor", "Código inválido. Formato esperado: SEN-001.", "error");
+  if (sensores.some((s) => s.codigo === codigo && s.id !== editandoSensor))
+    return mostrarMensaje("msg-sensor", "Ese código de sensor ya está registrado.", "error");
   if (lecturaTxt.trim() === "")
     return mostrarMensaje("msg-sensor", "La lectura no puede estar vacía.", "error");
   if (!esNumero(lecturaTxt))
     return mostrarMensaje("msg-sensor", "La lectura debe ser numérica.", "error");
+  const lectura = parseFloat(lecturaTxt);
 
-  sensores.push({ codigo, tipo, lectura: parseFloat(lecturaTxt) });
-  e.target.reset();
+  if (editandoSensor !== null) {
+    const s = sensores.find((x) => x.id === editandoSensor);
+    if (s) { s.codigo = codigo; s.tipo = tipo; s.lectura = lectura; }
+    salirEdicionSensor();
+    guardar();
+    mostrarMensaje("msg-sensor", `Sensor ${codigo} actualizado.`, "ok");
+    toast("Cambios guardados", "ok");
+  } else {
+    sensores.push({ id: siguienteSensor++, codigo, tipo, lectura });
+    $("form-sensor").reset();
+    renderSensores();
+    guardar();
+    mostrarMensaje("msg-sensor", `Sensor ${codigo} registrado.`, "ok");
+    toast("Sensor registrado", "ok");
+  }
+}
+
+function editarSensor(id) {
+  const s = sensores.find((x) => x.id === id);
+  if (!s) return;
+  editandoSensor = id;
+  $("codigo").value = s.codigo;
+  $("tipo").value = s.tipo;
+  $("lectura").value = s.lectura;
+  $("btn-sensor").textContent = "Guardar cambios";
+  $("cancel-sensor").hidden = false;
+  $("modo-sensor").textContent = "✏️ Editando: " + s.codigo;
+  $("modo-sensor").hidden = false;
+  limpiarMensaje("msg-sensor");
   renderSensores();
+  $("form-sensor").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("codigo").focus();
+}
+
+function salirEdicionSensor() {
+  editandoSensor = null;
+  $("form-sensor").reset();
+  $("btn-sensor").textContent = "Registrar sensor";
+  $("cancel-sensor").hidden = true;
+  $("modo-sensor").hidden = true;
+  renderSensores();
+}
+
+function eliminarSensor(id) {
+  if (!confirm("¿Eliminar este sensor?")) return;
+  sensores = sensores.filter((s) => s.id !== id);
+  if (editandoSensor === id) salirEdicionSensor(); else renderSensores();
   guardar();
-  mostrarMensaje("msg-sensor", `Sensor ${codigo} registrado.`, "ok");
-  toast("Sensor registrado", "ok");
+  mostrarMensaje("msg-sensor", "Sensor eliminado.", "ok");
 }
 
 // ---------- Interfaz: tema, menú activo, reinicio ----------
@@ -256,15 +500,17 @@ function activarMenu() {
 }
 
 function reiniciar() {
-  if (!confirm("¿Borrar todos los registros guardados?")) return;
-  mantenimiento = []; sensores = [];
-  guardar(); renderMantenimiento(); renderSensores();
+  if (!confirm("¿Borrar todos tus registros guardados?")) return;
+  mantenimiento = [];
+  sensores = [];
+  guardar();
+  salirEdicionMant();
+  salirEdicionSensor();
   toast("Datos reiniciados", "alerta");
 }
 
 // ---------- Inicio ----------
-document.addEventListener("DOMContentLoaded", function () {
-  cargar();
+document.addEventListener("DOMContentLoaded", async function () {
   let oscuro = false;
   try { oscuro = localStorage.getItem("simtele_tema") === "dark"; } catch (e) {}
   aplicarTema(oscuro);
@@ -273,10 +519,25 @@ document.addEventListener("DOMContentLoaded", function () {
   renderSensores();
   activarMenu();
 
+  $("form-auth").addEventListener("submit", enviarAuth);
+  $("tab-login").addEventListener("click", () => cambiarModo(false));
+  $("tab-registro").addEventListener("click", () => cambiarModo(true));
+  $("logout").addEventListener("click", cerrarSesion);
+
   $("form-detencion").addEventListener("submit", calcularDetencion);
-  $("form-mant").addEventListener("submit", agregarMantenimiento);
+  $("form-mant").addEventListener("submit", guardarMantenimiento);
   $("form-viento").addEventListener("submit", analizarViento);
-  $("form-sensor").addEventListener("submit", registrarSensor);
+  $("form-sensor").addEventListener("submit", guardarSensor);
+  $("cancel-mant").addEventListener("click", () => { salirEdicionMant(); limpiarMensaje("msg-mant"); });
+  $("cancel-sensor").addEventListener("click", () => { salirEdicionSensor(); limpiarMensaje("msg-sensor"); });
+
   $("tema").addEventListener("click", () => aplicarTema(document.documentElement.getAttribute("data-theme") !== "dark"));
   $("reset").addEventListener("click", reiniciar);
+
+  await sembrarDemo();
+
+  // Restaurar sesión si la pestaña sigue abierta
+  let k = null;
+  try { k = sessionStorage.getItem("simtele_sesion"); } catch (e) {}
+  if (k && leerUsuarios()[k]) entrar(k, true);
 });
