@@ -2,7 +2,7 @@ const UMBRAL_DISTANCIA = 50; // metros (ficticio)
 const REGEX_SENSOR = /^SEN-\d{3}$/;
 const REGEX_USUARIO = /^[A-Za-z0-9_]{3,20}$/;
 const ESTADOS = { normal: "Normal", revision: "Revisión", urgente: "Urgente" };
-const RESERVADOS = ["_proto_", "constructor", "prototype", "hasownproperty", "tostring", "valueof"];
+const RESERVADOS = ["__proto__", "constructor", "prototype", "hasownproperty", "tostring", "valueof"];
 const USUARIO_DEMO = "demo";
 
 let usuarioActual = null; // clave (minúsculas) del usuario con sesión
@@ -98,9 +98,9 @@ function cargar() {
 }
 
 function actualizarKpis() {
-  $("k-mant").textContent = mantenimiento.length;
-  $("k-urg").textContent = mantenimiento.filter((r) => r.estado === "urgente").length + " urgentes";
-  $("k-sens").textContent = sensores.length;
+  if ($("k-mant")) $("k-mant").textContent = mantenimiento.length;
+  if ($("k-urg")) $("k-urg").textContent = mantenimiento.filter((r) => r.estado === "urgente").length + " urgentes";
+  if ($("k-sens")) $("k-sens").textContent = sensores.length;
 }
 
 // ---------- Autenticación (simulada en el navegador) ----------
@@ -227,10 +227,12 @@ function entrar(k, silencioso) {
   try { sessionStorage.setItem("simtele_sesion", k); } catch (e) {}
   const u = actualizarCabecera();
 
-  cargar();
-  renderMantenimiento();
-  renderSensores();
   document.body.classList.remove("bloqueado");
+  try {
+    cargar();
+    renderMantenimiento();
+    renderSensores();
+  } catch (e) { console.error(e); }
   $("form-auth").reset();
   cambiarModo(false);
   window.scrollTo(0, 0);
@@ -240,10 +242,10 @@ function entrar(k, silencioso) {
 function limpiarPanel() {
   ["form-detencion", "form-viento"].forEach((id) => { const f = $(id); if (f) f.reset(); });
   ["msg-detencion", "msg-mant", "msg-viento", "msg-sensor"].forEach(limpiarMensaje);
-  $("medidor-barra").style.width = "0";
-  $("barras").innerHTML = "";
-  $("k-dist").textContent = "—";
-  $("k-viento").textContent = "—";
+  if ($("medidor-barra")) $("medidor-barra").style.width = "0";
+  if ($("barras")) $("barras").innerHTML = "";
+  if ($("k-dist")) $("k-dist").textContent = "—";
+  if ($("k-viento")) $("k-viento").textContent = "—";
 }
 
 function cerrarSesion() {
@@ -476,14 +478,15 @@ function calcularDetencion(e) {
 
   mostrarMensaje("msg-detencion",
     supera
-      ? Distancia en reacción: ${d} m. ALERTA (simulación): supera el umbral ficticio de ${UMBRAL_DISTANCIA} m.
-      : Distancia en reacción: ${d} m. Dentro del umbral ficticio de ${UMBRAL_DISTANCIA} m.,
+      ? `Distancia en reacción: ${d} m. ALERTA (simulación): supera el umbral ficticio de ${UMBRAL_DISTANCIA} m.`
+      : `Distancia en reacción: ${d} m. Dentro del umbral ficticio de ${UMBRAL_DISTANCIA} m.`,
     supera ? "alerta" : "ok");
 }
 
 // ---------- Módulo 2: Mantenimiento ----------
 function renderMantenimiento() {
   const tbody = $("tbody-mant");
+  if (!tbody) { actualizarKpis(); return; }
   tbody.innerHTML = "";
   if (mantenimiento.length === 0) filaVacia(tbody, 4, "Aún no hay registros.");
 
@@ -528,10 +531,4 @@ function guardarMantenimiento(e) {
     return mostrarMensaje("msg-mant", "Las horas deben ser un número.", "error");
   const horas = parseFloat(horasTxt);
   if (horas < 0 || horas > 100000)
-    return mostrarMensaje("msg-mant", "Las horas deben estar entre 0 y 100000.", "error");
-
-  if (editandoMant !== null) {
-    const r = mantenimiento.find((x) => x.id === editandoMant);
-    if (r) { r.componente = componente; r.horas = horas; r.estado = estado; }
-    salirEdicionMant();
-    guarda
+    return mostrarMensaje("msg-mant", "Las horas deben estar entre 0 y 100000.
