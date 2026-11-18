@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMTELE-WEB · Panel de control</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bloqueado">
+  <div id="auth" class="auth">
+    <div class="auth-card">
+      <div class="auth-logo">🚠</div>
+      <h2>SIMTELE-WEB</h2>
+      <p class="ayuda">Panel de prevención y monitoreo</p>
+      <div class="tabs">
+        <button type="button" id="tab-login" class="tab activo">Iniciar sesión</button>
+        <button type="button" id="tab-registro" class="tab">Crear cuenta</button>
+      </div>
+      <form id="form-auth" novalidate>
+        <label for="auth-user">Usuario</label>
+        <input id="auth-user" type="text" autocomplete="username" placeholder="Tu usuario" required>
+        <label for="auth-pass">Contraseña</label>
+        <div class="pass-box">
+          <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
+          <button type="button" class="ver-pass" data-target="auth-pass">Ver</button>
+        </div>
+        <div id="campo-pass2" hidden>
+          <label for="auth-pass2">Repetir contraseña</label>
+          <input id="auth-pass2" type="password" autocomplete="new-password" placeholder="Repite tu contraseña">
+        </div>
+        <button type="submit" id="auth-submit">Entrar</button>
+      </form>
+      <p id="msg-auth" class="mensaje" role="alert"></p>
+      <p class="ayuda">Administrador de prueba: <b>admin / Admin123!</b></p>
+    </div>
+  </div>
+
+  <header class="top">
+    <div class="top-in">
+      <a class="brand" href="#resumen"><span class="logo">🚠</span><div><strong>SIMTELE-WEB</strong><small>Simulador educativo</small></div></a>
+      <nav id="menu" aria-label="Módulos">
+        <a href="#resumen" class="activo">Resumen</a>
+        <a href="#detencion">Detención</a>
+        <a href="#mantenimiento">Mantenimiento</a>
+        <a href="#viento">Viento</a>
+        <a href="#sensores">Sensores</a>
+        <a href="#administracion" id="link-admin" hidden>Usuarios</a>
+      </nav>
+      <div class="acciones">
+        <span id="usuario" class="usuario" hidden></span>
+        <button id="tema" class="ghost" type="button">🌙 Modo oscuro</button>
+        <button id="reset" class="ghost" type="button">♻️ Reiniciar</button>
+        <button id="logout" class="ghost" type="button">🚪 Salir</button>
+      </div>
+    </div>
+    <div class="franja"></div>
+  </header>
+
+  <main>
+    <section id="resumen" class="hero">
+      <div class="hero-bg">
+        <svg class="montes" viewBox="0 0 1200 200" preserveAspectRatio="none">
+          <path d="M0 200V140L120 90 200 130 330 60 450 140 560 100 700 150 820 80 960 140 1080 100 1200 150V200Z" fill="rgba(255,255,255,.12)"/>
+          <path d="M0 200V170L150 130 300 170 480 120 650 175 850 125 1020 170 1200 135V200Z" fill="rgba(255,255,255,.22)"/>
+        </svg>
+        <div class="cable"><span class="cabin">🚠</span></div>
+      </div>
+      <div class="wrap">
+        <span class="chip">Modo simulación</span>
+        <h1>Panel de prevención y monitoreo del teleférico</h1>
+        <p class="sub">Practica detención de emergencia, mantenimiento, viento y sensores con datos ficticios.</p>
+        <div class="lineas">
+          <span class="lc" style="--c:#E30613">Roja</span><span class="lc" style="--c:#F5B700">Amarilla</span>
+          <span class="lc" style="--c:#00A651">Verde</span><span class="lc" style="--c:#0057B8">Azul</span>
+          <span class="lc" style="--c:#F7941D">Naranja</span><span class="lc" style="--c:#FFFFFF">Blanca</span>
+          <span class="lc" style="--c:#4FC3F7">Celeste</span><span class="lc" style="--c:#7B2D8E">Morada</span>
+          <span class="lc" style="--c:#7A4B2A">Café</span><span class="lc" style="--c:#9AA5B1">Plateada</span>
+        </div>
+        <div class="kpis">
+          <article class="kpi amarilla"><span>🔧</span><div><small>Registros de mantenimiento</small><strong id="k-mant">0</strong><em id="k-urg">0 urgentes</em></div></article>
+          <article class="kpi verde"><span>📡</span><div><small>Sensores válidos</small><strong id="k-sens">0</strong><em>códigos SEN-###</em></div></article>
+          <article class="kpi roja"><span>🛑</span><div><small>Última distancia de reacción</small><strong id="k-dist">—</strong><em>metros</em></div></article>
+          <article class="kpi celeste"><span>🌬️</span><div><small>Último promedio de viento</small><strong id="k-viento">—</strong><em>km/h</em></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="perfil" class="card celeste">
+      <h2>👤 Mi cuenta</h2><p class="ayuda">Modifica tu nombre de usuario o cambia tu contraseña.</p>
+      <form id="form-perfil" novalidate>
+        <div class="grid2">
+          <div><label for="perfil-user">Nombre de usuario</label><input id="perfil-user" type="text" maxlength="20"></div>
+          <div><label for="perfil-pass">Nueva contraseña</label><input id="perfil-pass" type="password" placeholder="Deja vacío para no cambiarla"></div>
+        </div>
+        <label for="perfil-pass2">Repetir nueva contraseña</label><input id="perfil-pass2" type="password" placeholder="Repite la nueva contraseña">
+        <button type="submit">Guardar cambios</button>
+      </form>
+      <p id="msg-perfil" class="mensaje" role="status"></p>
+    </section>
+
+    <section id="detencion" class="card roja">
+      <h2>🛑 Detención de emergencia <span class="tag">Línea Roja</span></h2>
+      <p class="ayuda">Fórmula: d = (v / 3.6) × t. Umbral ficticio: <b>50 m</b>.</p>
+      <form id="form-detencion" novalidate>
+        <div class="grid2">
+          <div><label for="velocidad">Velocidad (km/h)</label><input id="velocidad" inputmode="decimal" placeholder="Ej.: 72"><small class="ayuda">Entre 1 y 100.</small></div>
+          <div><label for="tiempo">Tiempo de reacción (s)</label><input id="tiempo" inputmode="decimal" placeholder="Ej.: 3"><small class="ayuda">Entre 0.1 y 10.</small></div>
+        </div>
+        <button type="submit">Calcular distancia</button>
+      </form>
+      <div class="medidor"><div id="medidor-barra"></div><i></i></div>
+      <p id="msg-detencion" class="mensaje" role="status"></p>
+    </section>
+
+    <section id="mantenimiento" class="card amarilla">
+      <h2>🔧 Mantenimiento <span class="tag">Línea Amarilla</span></h2>
+      <form id="form-mant" novalidate>
+        <p id="modo-mant" class="modo" hidden></p>
+        <div class="grid3">
+          <div><label for="componente">Componente</label><input id="componente" placeholder="Ej.: Motor, polea, cabina"></div>
+          <div><label for="horas">Horas de uso</label><input id="horas" inputmode="decimal" placeholder="Ej.: 1200"></div>
+          <div><label for="estado">Estado</label><select id="estado"><option value="normal">Normal</option><option value="revision">Revisión</option><option value="urgente">Urgente</option></select></div>
+        </div>
+        <button type="submit" id="btn-mant">Agregar registro</button>
+        <button type="button" id="cancel-mant" class="secundario" hidden>Cancelar edición</button>
+      </form>
+      <p id="msg-mant" class="mensaje" role="status"></p>
+      <div class="tabla-wrap"><table><thead><tr><th>Componente</th><th>Horas</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbody-mant"></tbody></table></div>
+    </section>
+
+    <section id="viento" class="card celeste">
+      <h2>🌬️ Viento y oscilación <span class="tag">Línea Celeste</span></h2>
+      <p class="ayuda">5 mediciones simuladas (0 a 200 km/h). Menor a 20: calma; 20–39: moderado; 40 o más: fuerte.</p>
+      <form id="form-viento" novalidate>
+        <div class="fila-viento">
+          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 1" placeholder="M1">
+          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 2" placeholder="M2">
+          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 3" placeholder="M3">
+          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 4" placeholder="M4">
+          <input type="text" class="viento" inputmode="decimal" aria-label="Medición 5" placeholder="M5">
+        </div>
+        <button type="submit">Analizar mediciones</button>
+      </form>
+      <div id="barras" class="barras"></div><p id="msg-viento" class="mensaje" role="status"></p>
+    </section>
+
+    <section id="sensores" class="card verde">
+      <h2>📡 Sensores <span class="tag">Línea Verde</span></h2>
+      <form id="form-sensor" novalidate>
+        <p id="modo-sensor" class="modo" hidden></p>
+        <div class="grid3">
+          <div><label for="codigo">Código de sensor</label><input id="codigo" placeholder="SEN-001"><small class="ayuda">Formato: SEN- y 3 dígitos.</small></div>
+          <div><label for="tipo">Tipo</label><select id="tipo"><option>Temperatura</option><option>Vibración</option><option>Viento</option></select></div>
+          <div><label for="lectura">Lectura</label><input id="lectura" inputmode="decimal" placeholder="Ej.: 25.5"></div>
+        </div>
+        <button type="submit" id="btn-sensor">Registrar sensor</button>
+        <button type="button" id="cancel-sensor" class="secundario" hidden>Cancelar edición</button>
+      </form>
+      <p id="msg-sensor" class="mensaje" role="status"></p>
+      <div class="tabla-wrap"><table><thead><tr><th>Código</th><th>Tipo</th><th>Lectura</th><th>Acción</th></tr></thead><tbody id="tbody-sensor"></tbody></table></div>
+    </section>
+
+    <section id="administracion" class="card morada" hidden>
+      <h2>🛡️ Administración de usuarios</h2>
+      <p class="ayuda">El administrador puede cambiar nombres, restablecer contraseñas y eliminar cuentas.</p>
+      <div class="tabla-wrap"><table><thead><tr><th>Usuario</th><th>Rol</th><th>Acciones</th></tr></thead><tbody id="tbody-usuarios"></tbody></table></div>
+      <div id="editor-usuario" class="editor-usuario" hidden>
+        <h3>Editar usuario</h3>
+        <form id="form-admin-user" novalidate>
+          <input type="hidden" id="admin-user-original">
+          <label for="admin-user-nuevo">Nuevo nombre de usuario</label><input id="admin-user-nuevo" maxlength="20">
+          <label for="admin-pass-nueva">Nueva contraseña</label><input id="admin-pass-nueva" type="password" placeholder="Mínimo 8 caracteres">
+          <small class="ayuda">Debe tener letras, números y caracteres especiales.</small>
+          <button type="submit">Guardar usuario</button><button type="button" id="cancel-admin" class="secundario">Cancelar</button>
+        </form>
+        <p id="msg-admin" class="mensaje" role="status"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="franja"></div><p>Programación Web I · SIMTELE-WEB · Proyecto educativo con datos y umbrales ficticios.<br>Inspirado en la identidad de las líneas de Mi Teleférico; no es el sitio oficial.</p></footer>
+  <div id="toasts" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>
