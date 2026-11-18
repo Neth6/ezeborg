@@ -171,4 +171,37 @@
     <!-- MÓDULO 4 -->
     <section id="sensores" class="card verde">
       <h2>📡 Sensores <span class="tag">Línea Verde</span></h2>
+      <form id="form-sensor" novalidate>
+        <p id="modo-sensor" class="modo" hidden></p>
+        <div class="grid3">
+          <div><label for="codigo">Código</label>
+            <input type="text" id="codigo" placeholder="Ej.: SEN-001"></div>
+          <div><label for="tipo">Tipo</label>
+            <select id="tipo">
+              <option value="Temperatura">Temperatura</option>
+              <option value="Vibración">Vibración</option>
+              <option value="Viento">Viento</option>
+              <option value="Tensión de cable">Tensión de cable</option>
+            </select></div>
+          <div><label for="lectura">Lectura</label>
+            <input type="text" id="lectura" inputmode="decimal" placeholder="Ej.: 23.5"></div>
+        </div>
+        <button type="submit" id="btn-sensor">Registrar sensor</button>
+        <button type="button" id="cancel-sensor" class="secundario" hidden>Cancelar edición</button>
+      </form>
+      <p id="msg-sensor" class="mensaje" role="status"></p>
+      <div class="tabla-wrap">
+        <table>
+          <thead><tr><th>Código</th><th>Tipo</th><th>Lectura</th><th>Acción</th></tr></thead>
+          <tbody id="tbody-sensor"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer><p>SIMTELE-WEB · Simulador educativo con datos ficticios</p></footer>
+  <div id="toasts" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>span></h2>
       <form id="form-sensor"
